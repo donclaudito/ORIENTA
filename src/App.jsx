@@ -544,15 +544,18 @@ export default function App() {
         </div>
       </aside>
 
-      <main className="max-w-[1600px] mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 print:block print:p-0 min-h-[calc(100vh-64px)]">
+      <main className="w-full p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 print:block print:p-0 min-h-[calc(100vh-64px)]">
         
-        {/* Painel de Dados do Paciente (Left Sidebar) */}
-        <section className="lg:col-span-4 bg-white/70 backdrop-blur-md rounded-2xl shadow-xl border border-white/50 print:hidden h-fit sticky top-20 transition-all custom-scrollbar">
-          <div className="p-6 space-y-4 animate-fade-in">
-            <h2 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2 border-b pb-2">
-              <User className="w-4 h-4" />
-              Dados do Paciente
-            </h2>
+        {/* Painel de Dados do Paciente (Left Sidebar) - FIX: Altura definida para habilitar scroll */}
+        <section className="lg:col-span-4 glass-card rounded-3xl print:hidden h-[calc(100vh-140px)] sticky top-24 overflow-y-auto custom-scrollbar theme-transition">
+          <div className="p-8 space-y-6 animate-fade-in">
+            <div className="flex items-center justify-between border-b pb-4">
+              <h2 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                <User className="w-4 h-4 text-blue-500" />
+                Dados do Paciente
+              </h2>
+              <div className="bg-blue-50 text-blue-600 px-2 py-1 rounded text-[10px] font-black uppercase">Prontuário</div>
+            </div>
 
             <div className="space-y-4">
               <div>
