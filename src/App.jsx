@@ -229,7 +229,16 @@ export default function App() {
   console.log('Selected Entities:', { selectedHospital, selectedDoctor, selectedReturn, selectedEmergency });
 
   const handlePrint = () => {
+    const originalTitle = document.title;
+    const patientSuffix = formData.patientName ? ` - ${formData.patientName}` : '';
+    document.title = `Orientações de Alta${patientSuffix}`;
+    
     window.print();
+    
+    // Restaura o título original após abrir a janela de impressão
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 1000);
   };
 
   // Funções de personalização de texto
@@ -800,30 +809,14 @@ export default function App() {
         {/* Visualização / Impressão (Right Column) */}
         <section className="lg:col-span-8 bg-white p-8 md:p-12 rounded-2xl shadow-2xl border border-slate-200 print:shadow-none print:border-none print:p-0 print:w-full min-h-[297mm] transition-all">
           
-          {/* CABEÇALHO INSTITUCIONAL */}
+          {/* CABEÇALHO INTEGRADO (Título + Paciente) */}
           <div className="text-center border-b-4 pb-6 mb-8" style={{ borderColor: themeColor }}>
             <h2 className="text-xl font-black uppercase tracking-widest text-slate-400 mb-1">
               {selectedHospital.hospitalName || 'Hospital não selecionado'}
             </h2>
             <h1 className="text-3xl font-black uppercase tracking-tighter" style={{ color: themeColor }}>
-              Orientações de Alta Hospitalar
+              Orientações de Alta — <span className="italic font-extrabold text-blue-800 print:text-black">{formData.patientName || 'PACIENTE'}</span>
             </h1>
-          </div>
-
-          {/* BLOCO 1: DADOS DO PACIENTE - ALARGADO E COM DESTAQUE */}
-          <div className="mb-8">
-            <div className="flex items-center gap-2 bg-slate-100 p-3 rounded-t-xl border border-slate-200">
-              <User className="w-5 h-5 text-slate-500" />
-              <span className="text-xs font-black uppercase text-slate-600 tracking-widest">👤 Identificação do Paciente</span>
-            </div>
-            <div className="border border-t-0 border-slate-200 rounded-b-xl overflow-hidden shadow-sm">
-              <div className="p-6 bg-white">
-                <p className="text-[11px] uppercase font-bold text-slate-400 mb-2 tracking-widest">Nome Completo</p>
-                <p className="text-3xl font-black text-slate-900 uppercase tracking-tighter leading-none">
-                  {formData.patientName || '________________________________________________'}
-                </p>
-              </div>
-            </div>
           </div>
 
           <div className="grid grid-cols-1 mb-6">
@@ -1010,72 +1003,58 @@ export default function App() {
               </div>
             )}
 
-            {/* 📅 Locais de Retorno Agendados */}
-            <div className="flex gap-4 bg-blue-50/50 p-6 rounded-2xl border border-blue-100 print:border-slate-300 mt-6 break-inside-avoid shadow-sm">
-              <div className="mt-1 bg-blue-600 p-2.5 rounded-xl h-fit shadow-md shadow-blue-200 print:shadow-none">
-                <Calendar className="w-6 h-6 text-white" />
-              </div>
-              <div className="w-full">
-                <h3 className="font-black text-xl text-blue-900 uppercase tracking-tight">📅 Meus Retornos Agendados</h3>
-                <p className="text-blue-800 text-sm mt-1 mb-4 leading-relaxed font-medium">
-                  Este é o local exato onde você deve comparecer no dia do seu retorno agendado:
-                </p>
-                <div className="bg-white p-5 rounded-xl border border-blue-200 shadow-sm">
-                  <div className="flex justify-between items-start mb-3">
-                    <p className="text-lg font-black text-blue-950 uppercase mb-1">{selectedReturn.name || '__________________________'}</p>
-                    {formData.returnDays && (
-                      <span className="bg-blue-100 text-blue-800 text-[10px] font-black px-2 py-1 rounded uppercase tracking-tighter">
-                        Em {formData.returnDays} dias
-                      </span>
-                    )}
-                  </div>
-                  <div className="space-y-1 border-t pt-3 mt-1">
-                    <p className="text-sm text-slate-800 font-bold flex items-center gap-2 italic">
-                      <Calendar className="w-4 h-4 text-blue-500" /> Data Prevista: {getCalculatedReturnDate() || '____________________'}
-                    </p>
-                    <p className="text-sm text-slate-600 flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-blue-500" /> {selectedReturn.address || 'Consultar Ala/Andar na Recepção'}
-                    </p>
-                    <p className="text-sm text-slate-600 flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-blue-500" /> {selectedReturn.time || 'Horário conforme agendamento'}
-                    </p>
-                  </div>
+            {/* GRID DE LOCAIS DE ATENDIMENTO (Compacto 2 Colunas) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 break-inside-avoid">
+              
+              {/* 📅 Locais de Retorno Agendados */}
+              <div className="flex gap-3 bg-blue-50/50 p-4 rounded-2xl border border-blue-100 print:border-slate-300 shadow-sm h-full">
+                <div className="mt-1 bg-blue-600 p-2 rounded-xl h-fit shadow-md shadow-blue-200 print:shadow-none">
+                  <Calendar className="w-5 h-5 text-white" />
                 </div>
-              </div>
-            </div>
-
-            {/* 🚨 Emergência / Onde Ir Agora */}
-            <div className="flex gap-4 bg-red-50/50 p-6 rounded-2xl border border-red-200 print:border-slate-300 mt-6 break-inside-avoid shadow-sm">
-              <div className="mt-1 bg-red-600 p-2.5 rounded-xl h-fit shadow-md shadow-red-200 print:shadow-none">
-                <AlertTriangle className="w-6 h-6 text-white" />
-              </div>
-              <div className="w-full">
-                <h3 className="font-black text-xl text-red-900 uppercase tracking-tight">🚨 Emergência / Onde ir Agora</h3>
-                <p className="text-red-800 text-sm mt-1 mb-4 leading-relaxed font-medium">
-                  Em caso de sinais de alerta (febre, dor intensa, pus), dirija-se imediatamente a:
-                </p>
-                <div className="bg-white p-5 rounded-xl border border-red-200 shadow-sm">
-                  <p className="text-lg font-black text-red-950 uppercase mb-1">{selectedEmergency.name || 'Pronto-Socorro do Hospital'}</p>
-                  <div className="space-y-1">
-                    <p className="text-sm text-slate-600 flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-red-500" /> {selectedEmergency.address || 'Entrada de Emergência Principal'}
-                    </p>
-                    <p className="text-sm text-slate-600 flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-red-500" /> {selectedEmergency.availability || 'Disponibilidade 24h'}
-                    </p>
-                    {selectedEmergency.phone && (
-                      <p className="text-sm text-red-700 font-bold flex items-center gap-2">
-                        <Phone className="w-4 h-4" /> {selectedEmergency.phone}
+                <div className="w-full">
+                  <h3 className="font-black text-lg text-blue-900 uppercase tracking-tight">📅 Meus Retornos</h3>
+                  <div className="bg-white p-3 rounded-xl border border-blue-200 shadow-sm mt-2">
+                    <p className="text-sm font-black text-blue-950 uppercase mb-1 leading-tight">{selectedReturn.name || 'Pendente'}</p>
+                    <div className="space-y-0.5 border-t pt-2 mt-1">
+                      <p className="text-[10px] text-slate-800 font-bold flex items-center gap-2 italic">
+                        <Calendar className="w-3 h-3 text-blue-500" /> {getCalculatedReturnDate()}
                       </p>
-                    )}
+                      <p className="text-[10px] text-slate-600 flex items-center gap-2">
+                        <MapPin className="w-3 h-3 text-blue-500" /> {selectedReturn.address || 'Ala Recepção'}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
+
+              {/* 🚨 Emergência / Onde Ir Agora */}
+              <div className="flex gap-3 bg-red-50/50 p-4 rounded-2xl border border-red-200 print:border-slate-300 shadow-sm h-full">
+                <div className="mt-1 bg-red-600 p-2 rounded-xl h-fit shadow-md shadow-red-200 print:shadow-none">
+                  <AlertTriangle className="w-5 h-5 text-white" />
+                </div>
+                <div className="w-full">
+                  <h3 className="font-black text-lg text-red-900 uppercase tracking-tight">🚨 Emergência</h3>
+                  <div className="bg-white p-3 rounded-xl border border-red-200 shadow-sm mt-2">
+                    <p className="text-sm font-black text-red-950 uppercase mb-1 leading-tight">{selectedEmergency.name || 'Hospital'}</p>
+                    <div className="space-y-0.5 border-t pt-2 mt-1">
+                      <p className="text-[10px] text-slate-600 flex items-center gap-2">
+                        <MapPin className="w-3 h-3 text-red-500" /> {selectedEmergency.address || 'Acesso Principal'}
+                      </p>
+                      {selectedEmergency.phone && (
+                        <p className="text-[10px] text-red-700 font-bold flex items-center gap-2">
+                          <Phone className="w-3 h-3" /> {selectedEmergency.phone}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
 
           </div>
 
-          {/* Mensagem de Encerramento e Assinatura */}
+          {/* Mensagem de Encerramento e Assinatura Médica */}
           <div className="mt-12 pt-8 border-t border-slate-200 text-center break-inside-avoid">
             <p className="text-lg italic text-slate-600 mb-10 leading-relaxed max-w-2xl mx-auto">
               "Agradecemos sua confiança em nossa equipe. Foi uma honra cuidar de você. <br />
@@ -1083,14 +1062,33 @@ export default function App() {
             </p>
             
             <div className="flex flex-col items-center">
-              <div className="w-64 border-b-2 border-slate-400 mb-2"></div>
-              <p className="text-sm font-black uppercase text-slate-800">{selectedDoctor.doctorName || 'Assinatura do Médico'}</p>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                {selectedHospital.hospitalName || 'Equipe Cirúrgica'} 
-                {selectedDoctor.doctorCRM ? ` / CRM ${selectedDoctor.doctorCRM}` : ' / CRM ___________'}
-              </p>
+              {/* Área de Assinatura */}
+              <div className="mb-6">
+                <div className="w-64 border-b-2 border-slate-400 mb-2"></div>
+                <p className="text-sm font-black uppercase text-slate-800">{selectedDoctor.doctorName || 'Médico Cirurgião'}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  {selectedDoctor.doctorCRM ? `CRM ${selectedDoctor.doctorCRM}` : 'CRM ___________'}
+                </p>
+              </div>
+
+              {/* ✅ RODAPÉ DO HOSPITAL — DADOS INSTITUCIONAIS */}
+              <div className="pt-4 border-t-2 w-full max-w-md" style={{ borderColor: themeColor }}>
+                <p className="text-[12px] font-black uppercase tracking-wider" style={{ color: themeColor }}>
+                  {selectedHospital.hospitalName || 'Hospital não selecionado'}
+                </p>
+                <p className="text-[10px] text-slate-500 font-medium leading-relaxed mt-1">
+                  {selectedHospital.address || 'Endereço Institucional'} 
+                  {selectedHospital.cnpj && ` — CNPJ: ${selectedHospital.cnpj}`}
+                </p>
+                <p className="text-[11px] font-black text-slate-800 mt-3 uppercase tracking-tighter">
+                  {new Date().toLocaleDateString('pt-BR')}
+                </p>
+              </div>
             </div>
           </div>
+          
+          {/* Rodapé de Paginação (Apenas Impressão) */}
+          <footer className="print-footer hidden no-screen"></footer>
         </section>
       </main>
     </div>
