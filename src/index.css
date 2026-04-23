@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 antialiased;
+    transition: background-color 0.5s ease;
+  }
+
+  /* Premium Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 rounded-full hover:bg-slate-400 transition-colors;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-slate-200 rounded-full hover:bg-slate-300;
+  }
+}
+
+@layer components {
+  /* Transições globais para mudança de tema */
+  .theme-transition {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Efeito Glassmorphism */
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-xl;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+  
+  body {
+    background-color: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    font-size: 11pt;
+  }
+
+  /* Removendo sombras na impressão para maior nitidez */
+  .shadow-2xl, .shadow-xl, .shadow-md, .shadow-sm {
+    box-shadow: none !important;
+  }
+
+  /* Garantir que as bordas apareçam mesmo em impressoras P&B */
+  .border, .border-t, .border-b, .border-l, .border-r {
+    border-width: 1pt !important;
+  }
+
+  /* Evitar que seções importantes sejam cortadas entre páginas */
+  .break-inside-avoid {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Ajuste de contraste para elementos coloridos */
+  .bg-blue-50\/50, .bg-red-50\/50 {
+    background-color: #f8fafc !important; /* Slate 50 para economia de tinta e contraste */
+    border: 1pt solid #cbd5e1 !important;
+  }
+
+  /* Destaque nos títulos de seção */
+  h1, h2, h3 {
+    color: black !important;
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* Links e detalhes menores */
+  .text-slate-500, .text-slate-400 {
+    color: #64748b !important;
+  }
+}
