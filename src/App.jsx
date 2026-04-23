@@ -85,17 +85,28 @@ export default function App() {
   // Sincronizar seleções padrões ao trocar hospital ou carregar
   useEffect(() => {
     if (formData.selectedHospitalId) {
-      const hospitalReturns = configData.returnLocations.filter(r => r.hospitalId == formData.selectedHospitalId);
-      const hospitalEmergencies = configData.emergencyLocations.filter(e => e.hospitalId == formData.selectedHospitalId);
+      const hospitalReturns = configData.returnLocations.filter(r => String(r.hospitalId) === String(formData.selectedHospitalId));
+      const hospitalEmergencies = configData.emergencyLocations.filter(e => String(e.hospitalId) === String(formData.selectedHospitalId));
       
-      if (!formData.selectedReturnLocationId && hospitalReturns.length > 0) {
-        setFormData(prev => ({ ...prev, selectedReturnLocationId: hospitalReturns[0].id }));
+      // Se o local atual não pertence ao novo hospital, ou se nada estiver selecionado, pega o primeiro disponível
+      const currentReturnStillValid = hospitalReturns.some(r => String(r.id) === String(formData.selectedReturnLocationId));
+      if (!currentReturnStillValid && hospitalReturns.length > 0) {
+        setFormData(prev => ({ ...prev, selectedReturnLocationId: String(hospitalReturns[0].id) }));
+      } else if (hospitalReturns.length === 0) {
+        setFormData(prev => ({ ...prev, selectedReturnLocationId: '' }));
       }
-      if (!formData.selectedEmergencyLocationId && hospitalEmergencies.length > 0) {
-        setFormData(prev => ({ ...prev, selectedEmergencyLocationId: hospitalEmergencies[0].id }));
+
+      const currentEmergencyStillValid = hospitalEmergencies.some(e => String(e.id) === String(formData.selectedEmergencyLocationId));
+      if (!currentEmergencyStillValid && hospitalEmergencies.length > 0) {
+        setFormData(prev => ({ ...prev, selectedEmergencyLocationId: String(hospitalEmergencies[0].id) }));
+      } else if (hospitalEmergencies.length === 0) {
+        setFormData(prev => ({ ...prev, selectedEmergencyLocationId: '' }));
       }
+    } else {
+      // Se desmarcar o hospital, limpa os dependentes
+      setFormData(prev => ({ ...prev, selectedReturnLocationId: '', selectedEmergencyLocationId: '' }));
     }
-  }, [formData.selectedHospitalId, configData]);
+  }, [formData.selectedHospitalId, configData.returnLocations, configData.emergencyLocations]);
 
   // Sincronizar defaults com o formulário se nada estiver selecionado
   useEffect(() => {
@@ -118,18 +129,23 @@ export default function App() {
   };
 
   const resetSettings = () => {
-    if (window.confirm('Tem certeza que deseja resetar todas as configurações?')) {
+    if (window.confirm('Tem certeza que deseja resetar todas as configurações? Isso apagará hospitais, locais e médicos cadastrados.')) {
       const defaultConfig = {
-        hospitalName: '',
-        unitName: 'Unidade de Gastroenterologia e Cirurgia do Aparelho Digestivo (UGAD)',
-        doctorName: '',
-        doctorCRM: '',
-        returnLocation: '',
-        emergencyLocation: '',
+        hospitals: [],
+        returnLocations: [],
+        emergencyLocations: [],
+        doctors: [],
         commonProcedures: ['Colecistectomia Videolaparoscópica', 'Hernioplastia Inguinal', 'Apendicectomia', 'Histerectomia']
       };
       setConfigData(defaultConfig);
       setThemeColor('#1e3a8a');
+      setFormData(prev => ({
+        ...prev,
+        selectedHospitalId: '',
+        selectedDoctorId: '',
+        selectedReturnLocationId: '',
+        selectedEmergencyLocationId: ''
+      }));
       alert('Configurações resetadas com sucesso!');
     }
   };
@@ -613,14 +629,14 @@ export default function App() {
                 <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">🏥 Meu Hospital</label>
                 <select 
                   name="selectedHospitalId"
-                  value={formData.selectedHospitalId}
+                  value={String(formData.selectedHospitalId)}
                   onChange={handleChange}
                   className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 outline-none bg-white transition-shadow text-xs font-bold text-slate-700 uppercase tracking-tight"
                   style={{ '--tw-ring-color': themeColor }}
                 >
                   <option value="">Selecione o Hospital...</option>
                   {configData.hospitals.map(h => (
-                    <option key={h.id} value={h.id}>{h.hospitalName}</option>
+                    <option key={h.id} value={String(h.id)}>{h.hospitalName}</option>
                   ))}
                 </select>
               </div>
@@ -630,32 +646,38 @@ export default function App() {
                   <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">📅 Local de Retorno</label>
                   <select 
                     name="selectedReturnLocationId"
-                    value={formData.selectedReturnLocationId}
+                    value={String(formData.selectedReturnLocationId)}
                     onChange={handleChange}
                     className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 outline-none bg-white transition-shadow disabled:bg-slate-100 disabled:text-slate-400 text-xs font-bold text-slate-700 uppercase tracking-tight"
                     style={{ '--tw-ring-color': themeColor }}
                     disabled={!formData.selectedHospitalId}
                   >
                     <option value="">Selecione o Local...</option>
-                    {configData.returnLocations.filter(r => r.hospitalId == formData.selectedHospitalId).map(r => (
-                      <option key={r.id} value={r.id}>{r.name}</option>
-                    ))}
+                    {configData.returnLocations
+                      .filter(r => String(r.hospitalId) === String(formData.selectedHospitalId))
+                      .map(r => (
+                        <option key={r.id} value={String(r.id)}>{r.name}</option>
+                      ))
+                    }
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">🚨 Emergência</label>
                   <select 
                     name="selectedEmergencyLocationId"
-                    value={formData.selectedEmergencyLocationId}
+                    value={String(formData.selectedEmergencyLocationId)}
                     onChange={handleChange}
                     className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 outline-none bg-white transition-shadow disabled:bg-slate-100 disabled:text-slate-400 text-xs font-bold text-slate-700 uppercase tracking-tight"
                     style={{ '--tw-ring-color': themeColor }}
                     disabled={!formData.selectedHospitalId}
                   >
                     <option value="">Selecione a Unidade...</option>
-                    {configData.emergencyLocations.filter(e => e.hospitalId == formData.selectedHospitalId).map(e => (
-                      <option key={e.id} value={e.id}>{e.name}</option>
-                    ))}
+                    {configData.emergencyLocations
+                      .filter(e => String(e.hospitalId) === String(formData.selectedHospitalId))
+                      .map(e => (
+                        <option key={e.id} value={String(e.id)}>{e.name}</option>
+                      ))
+                    }
                   </select>
                 </div>
               </div>
@@ -664,14 +686,14 @@ export default function App() {
                 <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">👨‍⚕️ Médico Responsável</label>
                 <select 
                   name="selectedDoctorId"
-                  value={formData.selectedDoctorId}
+                  value={String(formData.selectedDoctorId)}
                   onChange={handleChange}
                   className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 outline-none bg-white transition-shadow text-xs font-bold text-slate-700 uppercase tracking-tight"
                   style={{ '--tw-ring-color': themeColor }}
                 >
                   <option value="">Selecione o Médico...</option>
                   {configData.doctors.map(d => (
-                    <option key={d.id} value={d.id}>{d.doctorName} (CRM {d.doctorCRM})</option>
+                    <option key={d.id} value={String(d.id)}>{d.doctorName} (CRM {d.doctorCRM})</option>
                   ))}
                 </select>
               </div>
