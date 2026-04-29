@@ -244,6 +244,46 @@ export default function App() {
 
   console.log('Selected Entities:', { selectedHospital, selectedDoctor, selectedReturn, selectedEmergency });
 
+  // [NOVO] Protocol Engine: Base de Conhecimento Clínica (Inspirado no NotebookLM)
+  const protocols = {
+    'COLECISTECTOMIA VIDEOLAPAROSCÓPICA': {
+      diet: 'Dieta leve e pobre em gorduras nos primeiros 10 a 15 dias. Evite frituras, embutidos e excesso de laticínios.',
+      activity: 'Caminhadas leves são recomendadas desde o primeiro dia. Evite carregar mais de 5kg por 30 dias.',
+      wound: 'Mantenha os curativos limpos e secos. Se houver pequenos adesivos (steri-strips), não os remova; cairão sozinhos.',
+      warning: 'Procure o pronto-socorro se notar cor amarelada na pele ou olhos (icterícia) ou febre.'
+    },
+    'HERNIOPLASTIA INGUINAL': {
+      diet: 'Dieta rica em fibras (frutas e vegetais) e boa hidratação para evitar constipação e esforço ao evacuar.',
+      activity: 'Repouso relativo. NÃO pegue peso superior a 5kg por 60 dias. Evite tossir ou espirrar com força sem apoiar a região.',
+      wound: 'Uso de suporte escrotal ou cueca justa pode ajudar no conforto. Limpeza com álcool 70% ou clorexidina.',
+      warning: 'Procure o pronto-socorro se houver abaulamento súbito ou endurecimento no local da cirurgia.'
+    },
+    'HISTERECTOMIA': {
+      diet: 'Dieta balanceada. Aumente a ingestão de água para facilitar o trânsito intestinal.',
+      activity: 'Subir escadas apenas o estritamente necessário. Repouso sexual absoluto por 60 dias. Sem exercícios de impacto por 60 dias.',
+      wound: 'Observar sangramento vaginal. É normal um pequeno corrimento rosado. Se houver sangramento vivo abundante, procure emergência.',
+      warning: 'Febre, dor persistente na panturrilha ou falta de ar requerem avaliação imediata.'
+    },
+    'APENDICECTOMIA': {
+      diet: 'Retorno progressivo à dieta habitual. Evite alimentos que causem muitos gases (feijão, repolho, refrigerantes).',
+      activity: 'Caminhadas dentro de casa são essenciais. Evite dirigir por 10 a 14 dias.',
+      wound: 'Lavar com água e sabão neutro durante o banho. Secar bem sem esfregar.',
+      warning: 'Se parar de eliminar gases ou tiver vômitos persistentes, retorne ao hospital.'
+    }
+  };
+
+  const getProcedureProtocol = () => {
+    // Pega o primeiro procedimento preenchido para definir o protocolo base
+    const mainProc = formData.procedures[0]?.toUpperCase().trim();
+    if (!mainProc) return null;
+    
+    // Busca exata ou por palavra-chave
+    const key = Object.keys(protocols).find(k => mainProc.includes(k) || k.includes(mainProc));
+    return protocols[key] || null;
+  };
+
+  const protocol = getProcedureProtocol();
+
   const handlePrint = () => {
     const originalTitle = document.title;
     const patientSuffix = formData.patientName ? ` - ${formData.patientName}` : '';
@@ -280,14 +320,14 @@ export default function App() {
 
     if (isPediatric) {
       const caregiverText = formData.caregiverName ? `Prezado(a) ${formData.caregiverName}` : "Prezados pais ou responsáveis";
-      return `${caregiverText}, a ${unit} parabeniza pela alta d${getPronoun()} paciente ${formData.patientName}. Este manual foi feito para orientá-los nos cuidados em casa.`;
+      return `${caregiverText}, o ${unit} parabeniza pela alta d${getPronoun()} paciente ${formData.patientName}. Este manual foi feito para orientá-los nos cuidados em casa.`;
     } 
     
     if (isElderly && formData.caregiverName) {
-      return `Prezado(a) cuidador(a) ${formData.caregiverName}, a ${unit} preparou estas orientações para a recuperação segura d${getPronoun()} ${getPatientTitle()} em domicílio.`;
+      return `Prezado(a) cuidador(a) ${formData.caregiverName}, o ${unit} preparou estas orientações para a recuperação segura d${getPronoun()} ${getPatientTitle()} em domicílio.`;
     }
 
-    return `Olá, ${getPatientTitle()}. A ${unit} parabeniza por sua alta hospitalar. Preparamos este manual para guiar sua recuperação em casa de forma segura e tranquila.`;
+    return `Olá, ${getPatientTitle()}. O ${unit} parabeniza por sua alta hospitalar. Preparamos este manual para guiar sua recuperação em casa de forma segura e tranquila.`;
   };
 
   // Gerar lista de datas para o dropdown (Hoje, Ontem e últimos 5 dias)
@@ -834,7 +874,7 @@ export default function App() {
           {/* CABEÇALHO INTEGRADO (Título + Paciente) */}
           <div className="text-center border-b-4 pb-6 mb-8" style={{ borderColor: themeColor }}>
             <h2 className="text-xl font-black uppercase tracking-widest text-slate-400 mb-1">
-              {selectedHospital.hospitalName || 'Hospital não selecionado'}
+              {selectedHospital.hospitalName || 'Hospital Stela Maris'}
             </h2>
             <h1 className="text-3xl font-black uppercase tracking-tighter" style={{ color: themeColor }}>
               Orientações de Alta — <span className="italic font-extrabold text-blue-800 print:text-black">{formData.patientName || 'PACIENTE'}</span>
@@ -846,7 +886,7 @@ export default function App() {
             <div>
               <div className="flex items-center gap-2 bg-slate-100 p-2 rounded-t-lg border border-slate-200">
                 <Calendar className="w-4 h-4 text-slate-500" />
-                <span className="text-xs font-black uppercase text-slate-600 tracking-wider">📅 Alta e Retorno</span>
+                <span className="text-xs font-black uppercase text-slate-600 tracking-wider">📅 Datas de Alta e Retorno</span>
               </div>
               <div className="border border-t-0 border-slate-200 rounded-b-lg overflow-hidden">
                 <div className="grid grid-cols-2 divide-x divide-slate-200 text-center">
@@ -936,13 +976,20 @@ export default function App() {
                 <Activity className="w-5 h-5 text-teal-700" />
               </div>
               <div>
-                <h3 className="font-bold text-lg text-slate-800">2. Cuidados com a Ferida Cirúrgica (Curativo)</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-lg text-slate-800">2. Cuidados com a Ferida Cirúrgica</h3>
+                </div>
                 <ul className="list-disc list-inside text-slate-600 mt-2 space-y-1">
-                  <li>Mantenha o local da cirurgia <strong>sempre limpo e seco</strong>.</li>
-                  <li>Lave a ferida apenas com água e sabão (de preferência neutro) durante o banho, de forma suave.</li>
+                  {protocol ? (
+                    <li className="font-bold text-slate-800">{protocol.wound}</li>
+                  ) : (
+                    <>
+                      <li>Mantenha o local da cirurgia <strong>sempre limpo e seco</strong>.</li>
+                      <li>Lave a ferida apenas com água e sabão neutro durante o banho.</li>
+                    </>
+                  )}
                   <li>Seque bem a incisão com uma toalha limpa ou gaze, sem esfregar.</li>
-                  <li><strong>NÃO</strong> aplique pomadas, pós, borra de café ou receitas caseiras sobre a ferida.</li>
-                  <li>Caso a ferida suje a roupa com um pouco de sangue nos primeiros dias, é considerado normal. Proteja com gaze seca e micropore.</li>
+                  <li><strong>NÃO</strong> aplique pomadas ou receitas caseiras sobre a ferida.</li>
                 </ul>
               </div>
             </div>
@@ -953,15 +1000,19 @@ export default function App() {
                 <Utensils className="w-5 h-5 text-orange-700" />
               </div>
               <div>
-                <h3 className="font-bold text-lg text-slate-800">3. Alimentação e Hidratação</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-lg text-slate-800">3. Alimentação e Hidratação</h3>
+                </div>
                 <ul className="list-disc list-inside text-slate-600 mt-2 space-y-1">
-                  {isPediatric ? (
-                    <li>Inicie com alimentos leves e ofereça bastante líquido (água e sucos naturais). Evite doces em excesso.</li>
+                  {protocol ? (
+                    <li className="font-bold text-slate-800 italic">{protocol.diet}</li>
+                  ) : isPediatric ? (
+                    <li>Inicie com alimentos leves e ofereça bastante líquido (água e sucos naturais).</li>
                   ) : (
-                    <li>Mantenha uma dieta leve e de fácil digestão nos primeiros dias. Evite gorduras, frituras e alimentos ultraprocessados.</li>
+                    <li>Mantenha uma dieta leve e de fácil digestão nos primeiros dias. Evite gorduras.</li>
                   )}
-                  <li>Beba bastante água (6 a 8 copos por dia), salvo restrição médica específica. A hidratação ajuda na cicatrização e no funcionamento do intestino.</li>
-                  <li>É comum o intestino ficar preguiçoso após a cirurgia. Caminhadas curtas e hidratação ajudam.</li>
+                  <li>Beba bastante água (6 a 8 copos por dia), salvo restrição médica específica.</li>
+                  <li>Caminhadas curtas e hidratação ajudam no funcionamento do intestino.</li>
                 </ul>
               </div>
             </div>
@@ -972,15 +1023,21 @@ export default function App() {
                 <HeartPulse className="w-5 h-5 text-purple-700" />
               </div>
               <div>
-                <h3 className="font-bold text-lg text-slate-800">4. Repouso e Atividades</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-lg text-slate-800">4. Repouso e Atividades</h3>
+                </div>
                 <ul className="list-disc list-inside text-slate-600 mt-2 space-y-1">
-                  <li><strong>Não fique o dia todo na cama.</strong> Caminhar pequenas distâncias dentro de casa previne trombose e melhora a respiração.</li>
-                  {isPediatric ? (
-                    <li>Evite que a criança pule, corra ou faça brincadeiras bruscas por pelo menos 15 a 30 dias (conforme orientação médica).</li>
-                  ) : isElderly ? (
-                    <li>Levante-se devagar para evitar tonturas. Caminhe com supervisão do cuidador para prevenir quedas.</li>
+                  {protocol ? (
+                    <li className="font-bold text-slate-800 underline decoration-purple-200">{protocol.activity}</li>
                   ) : (
-                    <li>Não carregue peso (acima de 5kg), não dirija e evite esforço físico intenso (como academia) por 30 a 45 dias, até liberação médica.</li>
+                    <li><strong>Não fique o dia todo na cama.</strong> Caminhar previne trombose.</li>
+                  )}
+                  {isPediatric ? (
+                    <li>Evite que a criança pule ou faça brincadeiras bruscas por 30 dias.</li>
+                  ) : isElderly ? (
+                    <li>Levante-se devagar para evitar tonturas. Caminhe com supervisão.</li>
+                  ) : !protocol && (
+                    <li>Não carregue peso (acima de 5kg) por 30 a 45 dias.</li>
                   )}
                 </ul>
               </div>
@@ -1000,6 +1057,7 @@ export default function App() {
                   </span>:
                 </p>
                 <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-red-900 font-bold text-sm">
+                  {protocol && <li className="col-span-full flex items-center gap-2 bg-white/80 p-2 rounded-lg border border-red-200 shadow-sm">⚠️ {protocol.warning}</li>}
                   <li className="flex items-center gap-2 bg-white/50 p-2 rounded-lg border border-red-100">🌡️ Febre acima de 37.8°C</li>
                   <li className="flex items-center gap-2 bg-white/50 p-2 rounded-lg border border-red-100">😣 Dor que não cede com remédios</li>
                   <li className="flex items-center gap-2 bg-white/50 p-2 rounded-lg border border-red-100">🩹 Pus ou vermelhidão na ferida</li>
@@ -1122,7 +1180,7 @@ function HospitalForm({ onAdd, themeColor }) {
   const [data, setData] = useState({ hospitalName: '', cnpj: '', address: '' });
   return (
     <div className="space-y-3">
-      <input placeholder="Nome do Hospital (ex: Stella Maris)" className="w-full p-2 border rounded-lg text-sm" value={data.hospitalName} onChange={e => setData({...data, hospitalName: e.target.value.toUpperCase()})} />
+      <input placeholder="Nome do Hospital (ex: Stela Maris)" className="w-full p-2 border rounded-lg text-sm" value={data.hospitalName} onChange={e => setData({...data, hospitalName: e.target.value.toUpperCase()})} />
       <div className="grid grid-cols-2 gap-2">
         <input placeholder="CNPJ" className="w-full p-2 border rounded-lg text-sm" value={data.cnpj} onChange={e => setData({...data, cnpj: e.target.value})} />
         <input placeholder="Endereço Principal" className="w-full p-2 border rounded-lg text-sm" value={data.address} onChange={e => setData({...data, address: e.target.value})} />
